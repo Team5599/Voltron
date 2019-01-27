@@ -11,7 +11,6 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.Spark;
@@ -28,6 +27,28 @@ public class Robot extends TimedRobot {
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
+
+  XBoxController controller;
+
+  Spark right_front;
+  Spark right_center;
+  Spark right_rear;
+
+  Spark left_front;
+  Spark left_center;
+  Spark left_rear;
+
+  Spark elevator_1;
+  Spark elevator_2;
+
+  SpeedControllerGroup right;
+  SpeedControllerGroup left;
+  SpeedControllerGroup elevator;
+    
+  DifferentialDrive myRobot;
+
+  double stickLeftY;
+  double stickRightY;
 
   /**
    * This function is run when the robot is first started up and should be
@@ -91,27 +112,27 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void teleopPeriodic() {
-    XBoxController controller = new XBoxController(0);
+    controller = new XBoxController(0);
 
-    Spark right_front = new Spark(1);
-    Spark right_center = new Spark(2);
-    Spark right_rear = new Spark(3);
+    right_front = new Spark(1);
+    right_center = new Spark(2);
+    right_rear = new Spark(3);
 
-    Spark left_front = new Spark(4);
-    Spark left_center = new Spark(5);
-    Spark left_rear = new Spark(6);
+    left_front = new Spark(4);
+    left_center = new Spark(5);
+    left_rear = new Spark(6);
 
-    Spark elevator_1 = new Spark(7);
-    Spark elevator_2 = new Spark(8);
+    elevator_1 = new Spark(7);
+    elevator_2 = new Spark(8);
 
-    SpeedControllerGroup right = new SpeedControllerGroup(right_front, right_center, right_rear);
-    SpeedControllerGroup left = new SpeedControllerGroup(left_front, left_center, left_rear);
-    SpeedControllerGroup elevator = new SpeedControllerGroup(elevator_1, elevator_2);
+    right = new SpeedControllerGroup(right_front, right_center, right_rear);
+    left = new SpeedControllerGroup(left_front, left_center, left_rear);
+    elevator = new SpeedControllerGroup(elevator_1, elevator_2);
     
-    DifferentialDrive myRobot = new DifferentialDrive(left, right);
+    myRobot = new DifferentialDrive(left, right);
 
-    double stickLeftY = controller.getLeftThumbstickY();
-    double stickRightY = controller.getRightThumbstickY();
+    stickLeftY = controller.getLeftThumbstickY();
+    stickRightY = controller.getRightThumbstickY();
 
     myRobot.tankDrive(stickLeftY, stickRightY);
 

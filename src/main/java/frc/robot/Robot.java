@@ -198,13 +198,4 @@ public class Robot extends TimedRobot {
   @Override
   public void testPeriodic() {
   }
-
-  @Override
-  public void disabledPeriodic() {
-    super.disabledPeriodic();
-
-    left.set(0.0);
-    right.set(0.0);
-    elevator.set(0.0);
-  }
 }

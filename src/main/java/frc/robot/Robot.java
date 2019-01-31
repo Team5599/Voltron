@@ -153,6 +153,19 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousPeriodic() {
+    right_front = new Spark(1);
+    right_center = new Spark(2);
+    right_rear = new Spark(3);
+
+    left_front = new Spark(4);
+    left_center = new Spark(5);
+    left_rear = new Spark(6);
+
+    elevator_1 = new Spark(7);
+    elevator_2 = new Spark(8);
+
+    right = new SpeedControllerGroup(right_front, right_center, right_rear);
+    left = new SpeedControllerGroup(left_front, left_center, left_rear);
 
     timer = new Timer();
 
@@ -162,7 +175,6 @@ public class Robot extends TimedRobot {
         break;
       case kDefaultAuto:
       default:
-
         break;
     }
   }
@@ -233,24 +245,24 @@ public class Robot extends TimedRobot {
 
     public int[] getConsole() {
       try {
-      visionPort = new SerialPort(115200, SerialPort.Port.kMXP);
-      visionLocation = visionPort.readString();
+        visionPort = new SerialPort(115200, SerialPort.Port.kMXP);
+        visionLocation = visionPort.readString();
 
-      x1Temp = visionLocation.substring(8, 10);
-      y1Temp = visionLocation.substring(12, 14);
-      x2Temp = visionLocation.substring(16, 18);
-      y2Temp = visionLocation.substring(20, 22);
+        x1Temp = visionLocation.substring(8, 10);
+        y1Temp = visionLocation.substring(12, 14);
+        x2Temp = visionLocation.substring(16, 18);
+        y2Temp = visionLocation.substring(20, 22);
 
-      int x1 = Integer.parseInt(x1Temp);
-      int y1 = Integer.parseInt(y1Temp);
-      int x2 = Integer.parseInt(x2Temp);
-      int y2 = Integer.parseInt(y2Temp);
+        int x1 = Integer.parseInt(x1Temp);
+        int y1 = Integer.parseInt(y1Temp);
+        int x2 = Integer.parseInt(x2Temp);
+        int y2 = Integer.parseInt(y2Temp);
 
-      int[] location = {x1, y1, x2, y2};
+        int[] location = {x1, y1, x2, y2};
 
-      return location;
+        return location;
       } catch (Exception e) {
-        System.out.println("[ERROR]: Unable to get output of JeVois.");
+        System.out.println(e);
         return null;
       }
     }

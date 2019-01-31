@@ -94,6 +94,9 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.SerialPort;
+
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.Spark;
@@ -126,6 +129,10 @@ public class Robot extends TimedRobot {
   double stickLeftY;
   double stickRightY;
 
+  Timer timer;
+
+  cameraHandler camera;
+
   @Override
   public void robotInit() {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
@@ -146,19 +153,24 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousPeriodic() {
+
+    timer = new Timer();
+
     switch (m_autoSelected) {
       case kCustomAuto:
         // Put custom auto code here
         break;
       case kDefaultAuto:
       default:
-        // Put default auto code here
+
         break;
     }
   }
 
   @Override
   public void teleopPeriodic() {
+    final int[] visionLocation = camera.getConsole();
+
     controller = new XBoxController(0);
 
     right_front = new Spark(1);
@@ -183,6 +195,12 @@ public class Robot extends TimedRobot {
 
     myRobot.tankDrive(stickLeftY, stickRightY);
 
+    for (int i = 0; i < 4; i++) {
+      System.out.print(visionLocation[i] + " ");
+    }
+
+    System.out.println("");
+
     //Elevator code - Press "B" to extend, "A" to retract.
     if (controller.getAButton()) {
       System.out.println("Elevator should be retracting");
@@ -197,5 +215,44 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testPeriodic() {
+  }
+
+  class cameraHandler {
+    SerialPort visionPort;
+    String visionLocation;
+
+    String x1Temp;
+    String y1Temp;
+    String x2Temp;
+    String y2Temp;
+
+    int x1;
+    int y1;
+    int x2;
+    int y2;
+
+    public int[] getConsole() {
+      try {
+      visionPort = new SerialPort(115200, SerialPort.Port.kMXP);
+      visionLocation = visionPort.readString();
+
+      x1Temp = visionLocation.substring(8, 10);
+      y1Temp = visionLocation.substring(12, 14);
+      x2Temp = visionLocation.substring(16, 18);
+      y2Temp = visionLocation.substring(20, 22);
+
+      int x1 = Integer.parseInt(x1Temp);
+      int y1 = Integer.parseInt(y1Temp);
+      int x2 = Integer.parseInt(x2Temp);
+      int y2 = Integer.parseInt(y2Temp);
+
+      int[] location = {x1, y1, x2, y2};
+
+      return location;
+      } catch (Exception e) {
+        System.out.println("[ERROR]: Unable to get output of JeVois.");
+        return null;
+      }
+    }
   }
 }

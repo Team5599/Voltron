@@ -181,8 +181,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-    final int[] visionLocation = camera.getConsole();
-
+    camera = new cameraHandler();
     controller = new XBoxController(0);
 
     right_front = new Spark(1);
@@ -207,9 +206,7 @@ public class Robot extends TimedRobot {
 
     myRobot.tankDrive(stickLeftY, stickRightY);
 
-    for (int i = 0; i < 4; i++) {
-      System.out.print(visionLocation[i] + " ");
-    }
+    System.out.println("(" + camera.getx1() + ", " + camera.gety1() + ") (" + camera.getx2() + ", " + camera.gety2() + ")");
 
     System.out.println("");
 
@@ -265,6 +262,66 @@ public class Robot extends TimedRobot {
         System.out.println(e);
         return null;
       }
+    }
+
+    public double getTargetCenter() {
+      try {
+        visionPort = new SerialPort(115200, SerialPort.Port.kMXP);
+        visionLocation = visionPort.readString();
+
+        x1Temp = visionLocation.substring(8, 10);
+        x2Temp = visionLocation.substring(16, 18);
+
+        int x1 = Integer.parseInt(x1Temp);
+        int x2 = Integer.parseInt(x2Temp);
+
+        double targetCenter = (x1 + x2)/2;
+
+        return targetCenter;
+      } catch (Exception e) {
+        System.out.println(e);
+        return 0.0;
+      }
+    }
+
+    public int getx1() {
+      visionPort = new SerialPort(115200, SerialPort.Port.kMXP);
+      visionLocation = visionPort.readString();
+
+      x1Temp = visionLocation.substring(8, 10);
+      int x1 = Integer.parseInt(x1Temp);
+
+      return x1;
+    }
+
+    public int gety1() {
+      visionPort = new SerialPort(115200, SerialPort.Port.kMXP);
+      visionLocation = visionPort.readString();
+
+      y1Temp = visionLocation.substring(12, 14);
+      int y1 = Integer.parseInt(x1Temp);
+
+      return y1;
+    }
+
+    public int getx2() {
+      visionPort = new SerialPort(115200, SerialPort.Port.kMXP);
+      visionLocation = visionPort.readString();
+
+      x2Temp = visionLocation.substring(16, 18);
+      int x1 = Integer.parseInt(x1Temp);
+
+      return x1;
+    }
+
+    public int gety2() {
+      visionPort = new SerialPort(115200, SerialPort.Port.kMXP);
+      visionLocation = visionPort.readString();
+
+      y2Temp = visionLocation.substring(20, 22);
+      int y1 = Integer.parseInt(x1Temp);
+
+      return y1;
     }
   }
 }

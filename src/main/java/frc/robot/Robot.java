@@ -91,12 +91,11 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMWWWNNNNNNNNWWWMMMMMMMMMMMMM
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
-import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.SerialPort;
-
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.Spark;
@@ -107,29 +106,6 @@ public class Robot extends TimedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  XBoxController controller;
-
-  Spark right_front;
-  Spark right_center;
-  Spark right_rear;
-
-  Spark left_front;
-  Spark left_center;
-  Spark left_rear;
-
-  Spark elevator_1;
-  Spark elevator_2;
-
-  SpeedControllerGroup right;
-  SpeedControllerGroup left;
-  SpeedControllerGroup elevator;
-    
-  DifferentialDrive myRobot;
-
-  double stickLeftY;
-  double stickRightY;
-
-  Timer timer;
 
   cameraHandler camera;
 
@@ -153,21 +129,6 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousPeriodic() {
-    right_front = new Spark(1);
-    right_center = new Spark(2);
-    right_rear = new Spark(3);
-
-    left_front = new Spark(4);
-    left_center = new Spark(5);
-    left_rear = new Spark(6);
-
-    elevator_1 = new Spark(7);
-    elevator_2 = new Spark(8);
-
-    right = new SpeedControllerGroup(right_front, right_center, right_rear);
-    left = new SpeedControllerGroup(left_front, left_center, left_rear);
-
-    timer = new Timer();
 
     switch (m_autoSelected) {
       case kCustomAuto:
@@ -179,47 +140,70 @@ public class Robot extends TimedRobot {
     }
   }
 
+  boolean gear;
+  boolean isYPressed;
+
+  XBoxController controller = new XBoxController(0);
+
+  Spark right_front = new Spark(1);
+  Spark right_center = new Spark(2);
+  Spark right_rear = new Spark(3);
+
+  Spark left_front = new Spark(4);
+  Spark left_center = new Spark(5);
+  Spark left_rear = new Spark(6);
+
+    Spark elevator_1 = new Spark(7);
+    Spark elevator_2 = new Spark(8);
+
+    SpeedControllerGroup right = new SpeedControllerGroup(right_front, right_center, right_rear);
+    SpeedControllerGroup left = new SpeedControllerGroup(left_front, left_center, left_rear);
+    SpeedControllerGroup elevator = new SpeedControllerGroup(elevator_1, elevator_2);
+    
+    DoubleSolenoid gearController = new DoubleSolenoid(0, 1);
+
+    DifferentialDrive myRobot = new DifferentialDrive(left, right);
+
+    double stickLeftY = controller.getLeftThumbstickY();
+    double stickRightY = controller.getRightThumbstickY();
+
   @Override
   public void teleopPeriodic() {
-    camera = new cameraHandler();
-    controller = new XBoxController(0);
-
-    right_front = new Spark(1);
-    right_center = new Spark(2);
-    right_rear = new Spark(3);
-
-    left_front = new Spark(4);
-    left_center = new Spark(5);
-    left_rear = new Spark(6);
-
-    elevator_1 = new Spark(7);
-    elevator_2 = new Spark(8);
-
-    right = new SpeedControllerGroup(right_front, right_center, right_rear);
-    left = new SpeedControllerGroup(left_front, left_center, left_rear);
-    elevator = new SpeedControllerGroup(elevator_1, elevator_2);
     
-    myRobot = new DifferentialDrive(left, right);
 
-    stickLeftY = controller.getLeftThumbstickY();
-    stickRightY = controller.getRightThumbstickY();
+    if (gear) {
+      stickLeftY = (stickLeftY/10)*7;
+      stickRightY = (stickRightY/10)*7;
+    }
 
     myRobot.tankDrive(stickLeftY, stickRightY);
-
-    System.out.println("(" + camera.getx1() + ", " + camera.gety1() + ") (" + camera.getx2() + ", " + camera.gety2() + ")");
-
-    System.out.println("");
 
     //Elevator code - Press "B" to extend, "A" to retract.
     if (controller.getAButton()) {
       System.out.println("Elevator should be retracting");
       elevator.set(-0.7);
-    } else if (controller.getBButton()) {
+    } else if (controller.getXButton()) {
       System.out.println("Lets make a hole in the ceiling!");
       elevator.set(0.7);
     } else {
       elevator.set(0.0);
     }
+
+    //High and low gear controllers.
+    if (controller.getYButton()) {
+      if (!isYPressed) {
+        isYPressed = true;
+        if (gear) {
+          gear = false;
+          gearController.set(Value.kReverse);
+        } else {
+          gear = true;
+          gearController.set(Value.kForward);
+        }
+      }
+    } else if (controller.getYButtonReleased()) {
+      isYPressed = false;
+    } 
   }
 
   @Override
@@ -261,6 +245,15 @@ public class Robot extends TimedRobot {
       } catch (Exception e) {
         System.out.println(e);
         return null;
+      }
+    }
+
+    public String getRawConsole() {
+      try {
+        visionPort = new SerialPort(115200, SerialPort.Port.kUSB2);
+        return visionLocation = visionPort.readString();
+      } catch (Exception e) {
+        return "We messed up.";
       }
     }
 

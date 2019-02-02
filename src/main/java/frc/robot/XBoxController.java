@@ -78,6 +78,14 @@ public class XBoxController {
 
 	// ABXY Buttons
 
+	public boolean getYButtonReleased() {
+		if (getYButtonReleased()) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
 	public boolean getAButton() {
 		return getButton(1);
 	}

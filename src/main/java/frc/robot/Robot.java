@@ -90,16 +90,23 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMWWWNNNNNNNNWWWMMMMMMMMMMMMM
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.TimedRobot;
-//import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.wpilibj.SpeedControllerGroup;
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.AnalogInput;
 //import edu.wpi.first.wpilibj.SerialPort;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.SpeedControllerGroup;
-import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.*;
+import edu.wpi.first.wpilibj.Victor;
+
 
 public class Robot extends TimedRobot {
   private static final String kDefaultAuto = "Default";
@@ -124,7 +131,7 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
   }
 
-  public void Update_Limelight_Tracking()
+  public void Update_Limelight_Tracking() //this one doesnt work
   {
         // These numbers must be tuned for your Robot!  Be careful!
         final double STEER_K = 0.03;                    // how hard to turn toward the target
@@ -163,6 +170,52 @@ public class Robot extends TimedRobot {
   }
 
 
+  
+
+  boolean gear;
+  boolean isYPressed;
+
+  XBoxController controller = new XBoxController(0);
+  LogitechExtreme3DPro operatorController = new LogitechExtreme3DPro(1);
+  
+
+  Spark right_front = new Spark(0);
+  //Spark right_center = new Spark(2);
+  Spark right_rear = new Spark(1);
+
+  Spark left_front = new Spark(2);
+  //Spark left_center = new Spark(5);
+  Spark left_rear = new Spark(3);
+
+  Spark elevator_1 = new Spark(4);
+  Spark elevator_2 = new Spark(5);
+  Spark elevator_3 = new Spark(6);
+  Spark elevator_4 = new Spark(7);
+
+  //Spark intakeRotator1 = new Spark(9); ////Re-Enter Actual Value Because This Is A Place Holder Value
+  //Spark intakeRotator2 = new Spark(8); ////Re-Enter Actual Value Because This Is A Place Holder Value
+
+  Spark intake = new Spark(8);// Re-Enter Actual Value Because This Is A Place Holder Value
+  Spark fly_wheel = new Spark(9);
+
+  Victor left_lift = new Victor(0);
+  Victor right_lift = new Victor(1);
+
+  DigitalInput bottom_limit_switch = new DigitalInput(0);
+
+  SpeedControllerGroup right = new SpeedControllerGroup(right_front, right_rear);
+  SpeedControllerGroup left = new SpeedControllerGroup(left_front, left_rear);
+  SpeedControllerGroup elevator = new SpeedControllerGroup(elevator_1, elevator_2, elevator_3, elevator_4);
+  
+  DoubleSolenoid gearController = new DoubleSolenoid(1, 2);
+  DoubleSolenoid elevatorController = new DoubleSolenoid(3, 4);
+  DoubleSolenoid hatchController = new DoubleSolenoid(5, 6);
+  DoubleSolenoid hatchController_2 = new DoubleSolenoid(7, 8);
+
+
+  DifferentialDrive myRobot = new DifferentialDrive(left, right);
+
+
   @Override
   public void autonomousInit() {
     m_autoSelected = m_chooser.getSelected();
@@ -173,46 +226,8 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousPeriodic() {
 
-    switch (m_autoSelected) {
-      case kCustomAuto:
-        // Put custom auto code here
-        break;
-      case kDefaultAuto:
-      default:
-        break;
-    }
+    teleopPeriodic();
   }
-
-  boolean gear;
-  boolean isYPressed;
-
-  XBoxController controller = new XBoxController(1);
-
-  Spark right_front = new Spark(1);
-  Spark right_center = new Spark(2);
-  Spark right_rear = new Spark(3);
-
-  Spark left_front = new Spark(4);
-  Spark left_center = new Spark(5);
-  Spark left_rear = new Spark(6);
-
-    Spark elevator_1 = new Spark(7);
-    Spark elevator_2 = new Spark(8);
-
-    Spark intakeRotator1 = new Spark(9); ////Re-Enter Actual Value Because This Is A Place Holder Value
-    //Spark intakeRotator2 = new Spark(8); ////Re-Enter Actual Value Because This Is A Place Holder Value
-
-    Spark intake = new Spark(0); ////Re-Enter Actual Value Because This Is A Place Holder Value
-
-    SpeedControllerGroup right = new SpeedControllerGroup(right_front, right_center, right_rear);
-    SpeedControllerGroup left = new SpeedControllerGroup(left_front, left_center, left_rear);
-    SpeedControllerGroup elevator = new SpeedControllerGroup(elevator_1, elevator_2);
-    
-    DoubleSolenoid gearController = new DoubleSolenoid(0, 1);
-    DoubleSolenoid hatchSolenoid = new DoubleSolenoid(2, 3);
-
-    DifferentialDrive myRobot = new DifferentialDrive(left, right);
-
     
 
   @Override
@@ -230,78 +245,134 @@ public class Robot extends TimedRobot {
   
   steer *= 0.70;
   drive *= 0.70;
-  */   
+  */
+   
   
-      // stickLeftY = (stickLeftY)*1.0;
-      //stickRightY = (stickRightY)*1.0;
+    stickLeftY = (stickLeftY)*1.0;
+    stickRightY = (stickRightY)*1.0;
     
-    
-    
+
+    if (bottom_limit_switch.get()){
+      //System.out.println("Limit SWitch " + bottom_limit_switch.get());
+    }
+
+    System.out.println("Left/Right: " + stickLeftY + ", " + stickRightY);
     myRobot.tankDrive(stickLeftY, stickRightY);
+   // elevator.set(controller.getLeftThumbstickY());
+   // SmartDashboard.putNumber("eLEVATORtHROTTLE", controller.getLeftThumbstickY());
+    //Elevator code - Press "A" to extend, "X" to ;retract.
     
-    //Elevator code - Press "A" to extend, "X" to retract.
-    if (controller.getRightTrigger() == true) {
-      System.out.println("Should go up");
-      elevator.set(0.9);
-    } else if (controller.getLeftTrigger()) {
-      System.out.println("Should go down");
-      elevator.set(-0.2);
+    double joystickY = operatorController.getJoystickY();
+    if (Math.abs(joystickY) > 0.1){
+      if (elevatorController.get() == DoubleSolenoid.Value.kReverse){
+        System.out.println("UNLOCKING ELEVATOR");
+        elevatorController.set(DoubleSolenoid.Value.kForward);
+      }
+      System.out.println("Elevator is moving . . .");
+      elevator.set(joystickY);
+    } else {
+
+      elevator.set(0.0);
+
+      if (elevatorController.get() == DoubleSolenoid.Value.kForward){
+        System.out.println("LOCKING ELEVATOR SOLENOID");
+        elevatorController.set(DoubleSolenoid.Value.kReverse);
+      }
+
+    }
+
+    if (operatorController.getButtonThree()){
+      System.out.println("Elevator Piston Status: " + elevatorController.get());
+    }
+
+    if (operatorController.getButtonSix()){
+      System.out.println("Manually locking elevator");
+      elevatorController.set(DoubleSolenoid.Value.kReverse);
+    } else if (operatorController.getButtonFour()){
+      System.out.println("Manually un-locking elevator");
+      elevatorController.set(DoubleSolenoid.Value.kForward);
+    }
+
+    // 6 to lock
+    // 4 to unlock
+
+    /*
+    if (joystickY < -0.1) {
+      //System.out.println("Should go up");
+      System.out.println(joystickY);
+      elevator.set(joystickY);
+    } else if (joystickY > 0.1) {
+      //System.out.println("Should go down");
+      System.out.println(joystickY);
+      elevator.set(joystickY);
     } else {
       elevator.set(0.0);
     }
-  /*for (int a = 0, a <= 60, a++) {
+    */
+
+    /*
+     for (int a = 0, a <= 60, a++) {
       if (a <= 30) {
 
       }
-  }
-*/
+    }
+    */
+
     //intake
-    if (controller.getBButton() == true) {
+    if (operatorController.getButtonEight() == true) {
       intake.set(-0.8);
-    } else if (controller.getAButton() == true) {
+
+    } else if (operatorController.getButtonSeven() == true) {
       intake.set(0.8);
     } else {
       intake.set(0.0);
     }
-
-    //intake rotator
-    if (controller.getRightBumper() == true) {
+    if(bottom_limit_switch.get() == true)
+    {
+        intake.set(0.1);
+    }
+    else {
+      
+    }
+    
+    
+    /*intake rotator
+    if (operatorController.getButtonNine() == true) {
       intakeRotator1.set(-0.5);
       //intakeRotator2.set(-0.5);
-    } else if (controller.getLeftBumper() == true) {
+    } else if (operatorController.getButtonTen() == true) {
       intakeRotator1.set(0.5);
       //intakeRotator2.set(0.5);
     } else {
-      intakeRotator1.set(0.0);
+      /intakeRotator1.set(0.0);
       //intakeRotator2.set(0.0);
     }
-
+        */
     //High and low gear controllers.
-    if (controller.getDPadDown() == true) {
+    if (controller.getRightTrigger() == true) {
 
       gearController.set(DoubleSolenoid.Value.kReverse);
-      System.out.println("Tanzina Zahan");
+      System.out.println("Tanzina Zahan Piston out");
 
-    } else if (controller.getDPadUp() == true) {
+    } else if (controller.getLeftTrigger() == true) {
 
       gearController.set(DoubleSolenoid.Value.kForward);
-      System.out.println("Nazifa 5599 Prapti");
+      System.out.println("Nazifa 5599 Prapti Piston In");
 
     }
-    
-    else {
-      gearController.set(DoubleSolenoid.Value.kOff);
-    }
 
-    if (controller.getXButton()){
-      hatchSolenoid.set(DoubleSolenoid.Value.kReverse);
-      System.out.println("Hatch Should be In");
-    } else if (controller.getYButton()){
-      hatchSolenoid.set(DoubleSolenoid.Value.kForward);
-      System.out.println("Hatch Should be Out");
+    /*
+    if (operatorController.getButtonEleven() == true){
+      elevatorController.set(DoubleSolenoid.Value.kReverse);
+      System.out.println("Elevator Locked");
+    } else if (operatorController.getButtonTwelve()){
+      elevatorController.set(DoubleSolenoid.Value.kForward);
+      System.out.println("Elevator Unlocked");
     } else {
-      hatchSolenoid.set(DoubleSolenoid.Value.kOff);
+      elevatorController.set(DoubleSolenoid.Value.kOff);
     }
+    */
+    
   }
     //test
 
@@ -310,7 +381,8 @@ public class Robot extends TimedRobot {
 
 
   //  }
-}
+   }
+
 
 
   

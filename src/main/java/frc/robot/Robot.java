@@ -106,6 +106,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.*;
 import edu.wpi.first.wpilibj.Victor;
+import edu.wpi.first.wpilibj.Timer;
 
 
 public class Robot extends TimedRobot {
@@ -169,7 +170,8 @@ public class Robot extends TimedRobot {
         m_LimelightDriveCommand = drive_cmd;
   }
 
-
+//pcm 1   2 3 high gear 6 7 low gear 
+//pcm 0   0 1 hatch grab 6 7 hatch extender 4 5 intake
   
 
   boolean gear;
@@ -198,19 +200,18 @@ public class Robot extends TimedRobot {
   Spark intake = new Spark(8);// Re-Enter Actual Value Because This Is A Place Holder Value
   Spark fly_wheel = new Spark(9);
 
-  Victor left_lift = new Victor(0);
-  Victor right_lift = new Victor(1);
+ // Victor left_lift = new Victor(0);
+ // Victor right_lift = new Victor(1);
 
   DigitalInput bottom_limit_switch = new DigitalInput(0);
 
   SpeedControllerGroup right = new SpeedControllerGroup(right_front, right_rear);
   SpeedControllerGroup left = new SpeedControllerGroup(left_front, left_rear);
   SpeedControllerGroup elevator = new SpeedControllerGroup(elevator_1, elevator_2, elevator_3, elevator_4);
-  
   DoubleSolenoid gearController = new DoubleSolenoid(1, 2);
-  DoubleSolenoid elevatorController = new DoubleSolenoid(3, 4);
-  DoubleSolenoid hatchController = new DoubleSolenoid(5, 6);
-  DoubleSolenoid hatchController_2 = new DoubleSolenoid(7, 8);
+  DoubleSolenoid elevatorController = new DoubleSolenoid(6, 7);
+ // DoubleSolenoid hatchController = new DoubleSolenoid(5, 6);
+ // DoubleSolenoid hatchController_2 = new DoubleSolenoid(7, 8);
 
 
   DifferentialDrive myRobot = new DifferentialDrive(left, right);
@@ -256,29 +257,37 @@ public class Robot extends TimedRobot {
       //System.out.println("Limit SWitch " + bottom_limit_switch.get());
     }
 
-    System.out.println("Left/Right: " + stickLeftY + ", " + stickRightY);
+    //System.out.println("Left/Right: " + stickLeftY + ", " + stickRightY);
     myRobot.tankDrive(stickLeftY, stickRightY);
-   // elevator.set(controller.getLeftThumbstickY());
+    //elevator.set(controller.getLeftThumbstickY());
    // SmartDashboard.putNumber("eLEVATORtHROTTLE", controller.getLeftThumbstickY());
     //Elevator code - Press "A" to extend, "X" to ;retract.
     
     double joystickY = operatorController.getJoystickY();
     if (Math.abs(joystickY) > 0.1){
-      if (elevatorController.get() == DoubleSolenoid.Value.kReverse){
+      if (joystickY < -0.1) {
+        //System.out.println("Should go up");
+        elevatorController.set(DoubleSolenoid.Value.kReverse);
+        
+        elevator.set(joystickY);
+      } else if (joystickY > 0.1) {
+        //System.out.println("Should go down");
+        elevatorController.set(DoubleSolenoid.Value.kReverse);
+        elevator.set(joystickY);
+      } 
+      }
+      else {
+        elevator.set(0.0);
+        elevatorController.set(DoubleSolenoid.Value.kForward);
+     /*if (elevatorController.get() == DoubleSolenoid.Value.kReverse){
         System.out.println("UNLOCKING ELEVATOR");
         elevatorController.set(DoubleSolenoid.Value.kForward);
       }
-      System.out.println("Elevator is moving . . .");
-      elevator.set(joystickY);
-    } else {
-
-      elevator.set(0.0);
-
-      if (elevatorController.get() == DoubleSolenoid.Value.kForward){
+        if (elevatorController.get() == DoubleSolenoid.Value.kForward){
         System.out.println("LOCKING ELEVATOR SOLENOID");
         elevatorController.set(DoubleSolenoid.Value.kReverse);
-      }
-
+      }*/
+      
     }
 
     if (operatorController.getButtonThree()){
@@ -293,22 +302,11 @@ public class Robot extends TimedRobot {
       elevatorController.set(DoubleSolenoid.Value.kForward);
     }
 
-    // 6 to lock
-    // 4 to unlock
+    
 
-    /*
-    if (joystickY < -0.1) {
-      //System.out.println("Should go up");
-      System.out.println(joystickY);
-      elevator.set(joystickY);
-    } else if (joystickY > 0.1) {
-      //System.out.println("Should go down");
-      System.out.println(joystickY);
-      elevator.set(joystickY);
-    } else {
-      elevator.set(0.0);
-    }
-    */
+    
+    
+    
 
     /*
      for (int a = 0, a <= 60, a++) {
@@ -321,20 +319,22 @@ public class Robot extends TimedRobot {
     //intake
     if (operatorController.getButtonEight() == true) {
       intake.set(-0.8);
-
-    } else if (operatorController.getButtonSeven() == true) {
+      
+ }  else if (operatorController.getButtonSeven() == true) {
       intake.set(0.8);
+
     } else {
       intake.set(0.0);
     }
-    if(bottom_limit_switch.get() == true)
+    
+   /* if(bottom_limit_switch.get() == true)
     {
         intake.set(0.1);
     }
     else {
       
     }
-    
+    */
     
     /*intake rotator
     if (operatorController.getButtonNine() == true) {

@@ -107,6 +107,7 @@ import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.*;
 import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.SolenoidBase;
 
 
 public class Robot extends TimedRobot {
@@ -117,7 +118,16 @@ public class Robot extends TimedRobot {
   private boolean m_LimelightHasValidTarget = false;
   private double m_LimelightDriveCommand = 0.0;
   private double m_LimelightSteerCommand = 0.0;
-
+  
+/*
+  public Robot DoubleSolenoid(int moduleNumber, int forwardChannel, int reverseChannel)
+  {
+    moduleNumber = 0;
+    forwardChannel = 6;
+    reverseChannel = 7;
+  }
+  */
+  
 
   //cameraHandler camera;
 
@@ -208,10 +218,10 @@ public class Robot extends TimedRobot {
   SpeedControllerGroup right = new SpeedControllerGroup(right_front, right_rear);
   SpeedControllerGroup left = new SpeedControllerGroup(left_front, left_rear);
   SpeedControllerGroup elevator = new SpeedControllerGroup(elevator_1, elevator_2, elevator_3, elevator_4);
-  DoubleSolenoid gearController = new DoubleSolenoid(1, 2);
-  DoubleSolenoid elevatorController = new DoubleSolenoid(6, 7);
- // DoubleSolenoid hatchController = new DoubleSolenoid(5, 6);
- // DoubleSolenoid hatchController_2 = new DoubleSolenoid(7, 8);
+  DoubleSolenoid gearController = new DoubleSolenoid(1, 2, 3);
+  DoubleSolenoid elevatorController = new DoubleSolenoid(1, 6, 7);
+  DoubleSolenoid hatchGrab = new DoubleSolenoid(0, 0, 1);
+  DoubleSolenoid hatchExtender = new DoubleSolenoid(0, 6, 7);
 
 
   DifferentialDrive myRobot = new DifferentialDrive(left, right);
@@ -278,7 +288,7 @@ public class Robot extends TimedRobot {
       }
       else {
         elevator.set(0.0);
-        elevatorController.set(DoubleSolenoid.Value.kForward);
+       // elevatorController.set(DoubleSolenoid.Value.kForward);
      /*if (elevatorController.get() == DoubleSolenoid.Value.kReverse){
         System.out.println("UNLOCKING ELEVATOR");
         elevatorController.set(DoubleSolenoid.Value.kForward);
@@ -336,18 +346,26 @@ public class Robot extends TimedRobot {
     }
     */
     
-    /*intake rotator
+    
     if (operatorController.getButtonNine() == true) {
-      intakeRotator1.set(-0.5);
+      hatchExtender.set(DoubleSolenoid.Value.kForward);
+      Timer.delay(0.05);
+      hatchGrab.set(DoubleSolenoid.Value.kReverse);
+      Timer.delay(0.05);
+      hatchExtender.set(DoubleSolenoid.Value.kReverse);
       //intakeRotator2.set(-0.5);
     } else if (operatorController.getButtonTen() == true) {
-      intakeRotator1.set(0.5);
-      //intakeRotator2.set(0.5);
+      hatchExtender.set(DoubleSolenoid.Value.kForward);
+      Timer.delay(0.05);
+      hatchGrab.set(DoubleSolenoid.Value.kForward);
+      Timer.delay(0.05);
+      hatchExtender.set(DoubleSolenoid.Value.kReverse);
     } else {
-      /intakeRotator1.set(0.0);
-      //intakeRotator2.set(0.0);
+      hatchGrab.set(DoubleSolenoid.Value.kReverse);
+      
+      
     }
-        */
+        
     //High and low gear controllers.
     if (controller.getRightTrigger() == true) {
 
@@ -361,7 +379,7 @@ public class Robot extends TimedRobot {
 
     }
 
-    /*
+    
     if (operatorController.getButtonEleven() == true){
       elevatorController.set(DoubleSolenoid.Value.kReverse);
       System.out.println("Elevator Locked");
@@ -371,7 +389,7 @@ public class Robot extends TimedRobot {
     } else {
       elevatorController.set(DoubleSolenoid.Value.kOff);
     }
-    */
+    
     
   }
     //test

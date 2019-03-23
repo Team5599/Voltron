@@ -108,6 +108,7 @@ import edu.wpi.first.networktables.*;
 import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.SolenoidBase;
+import java.util.concurrent.TimeUnit;
 
 
 public class Robot extends TimedRobot {
@@ -118,6 +119,7 @@ public class Robot extends TimedRobot {
   private boolean m_LimelightHasValidTarget = false;
   private double m_LimelightDriveCommand = 0.0;
   private double m_LimelightSteerCommand = 0.0;
+  
   
 /*
   public Robot DoubleSolenoid(int moduleNumber, int forwardChannel, int reverseChannel)
@@ -222,6 +224,7 @@ public class Robot extends TimedRobot {
   DoubleSolenoid elevatorController = new DoubleSolenoid(1, 6, 7);
   DoubleSolenoid hatchGrab = new DoubleSolenoid(0, 0, 1);
   DoubleSolenoid hatchExtender = new DoubleSolenoid(0, 6, 7);
+  DoubleSolenoid cargoArm = new DoubleSolenoid(0, 4, 5);
 
 
   DifferentialDrive myRobot = new DifferentialDrive(left, right);
@@ -336,10 +339,10 @@ public class Robot extends TimedRobot {
     } else {
       intake.set(0.0);
     }
-    
-   /* if(bottom_limit_switch.get() == true)
+    /*
+    if(bottom_limit_switch.get() == true)
     {
-        intake.set(0.1);
+        elevator.set(0.0);
     }
     else {
       
@@ -347,21 +350,29 @@ public class Robot extends TimedRobot {
     */
     
     
+    
     if (operatorController.getButtonNine() == true) {
-      hatchExtender.set(DoubleSolenoid.Value.kForward);
-      Timer.delay(0.05);
-      hatchGrab.set(DoubleSolenoid.Value.kReverse);
-      Timer.delay(0.05);
+      hatchExtender.set(DoubleSolenoid.Value.kReverse);
+      Timer.delay(0.5);
+      hatchGrab.set(DoubleSolenoid.Value.kForward);
+      Timer.delay(0.25);
+     // hatchGrab.set(DoubleSolenoid.Value.kReverse);
+     // Timer.delay(0.01);
+      
       hatchExtender.set(DoubleSolenoid.Value.kReverse);
       //intakeRotator2.set(-0.5);
-    } else if (operatorController.getButtonTen() == true) {
-      hatchExtender.set(DoubleSolenoid.Value.kForward);
-      Timer.delay(0.05);
-      hatchGrab.set(DoubleSolenoid.Value.kForward);
-      Timer.delay(0.05);
+    } 
+    else if (operatorController.getButtonTen() == true) {
       hatchExtender.set(DoubleSolenoid.Value.kReverse);
-    } else {
+      Timer.delay(0.001);
       hatchGrab.set(DoubleSolenoid.Value.kReverse);
+      Timer.delay(0.001);
+      hatchExtender.set(DoubleSolenoid.Value.kReverse);
+      Timer.delay(0.001);
+      cargoArm.set(DoubleSolenoid.Value.kForward);
+    } 
+    else {
+      hatchExtender.set(DoubleSolenoid.Value.kForward);
       
       
     }
@@ -381,13 +392,13 @@ public class Robot extends TimedRobot {
 
     
     if (operatorController.getButtonEleven() == true){
-      elevatorController.set(DoubleSolenoid.Value.kReverse);
-      System.out.println("Elevator Locked");
+      cargoArm.set(DoubleSolenoid.Value.kReverse);
+      //System.out.println("Elevator Locked");
     } else if (operatorController.getButtonTwelve()){
-      elevatorController.set(DoubleSolenoid.Value.kForward);
-      System.out.println("Elevator Unlocked");
+      cargoArm.set(DoubleSolenoid.Value.kForward);
+     // System.out.println("Elevator Unlocked");
     } else {
-      elevatorController.set(DoubleSolenoid.Value.kOff);
+      //cargoArm.set(DoubleSolenoid.Value.kReverse);
     }
     
     

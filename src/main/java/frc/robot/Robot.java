@@ -109,16 +109,13 @@ import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.SolenoidBase;
 import java.util.concurrent.TimeUnit;
+import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.CameraServer;
+import edu.wpi.first.wpilibj.Encoder;
 
 
 public class Robot extends TimedRobot {
-  private static final String kDefaultAuto = "Default";
-  private static final String kCustomAuto = "My Auto";
-  private String m_autoSelected;
-  private final SendableChooser<String> m_chooser = new SendableChooser<>();
-  private boolean m_LimelightHasValidTarget = false;
-  private double m_LimelightDriveCommand = 0.0;
-  private double m_LimelightSteerCommand = 0.0;
+  
   
   
 /*
@@ -135,52 +132,15 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotInit() {
-    m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
-    m_chooser.addOption("My Auto", kCustomAuto);
-    SmartDashboard.putData("Auto choices", m_chooser);
+    
+    CameraServer.getInstance().startAutomaticCapture();
   }
 
   @Override
   public void robotPeriodic() {
   }
 
-  public void Update_Limelight_Tracking() //this one doesnt work
-  {
-        // These numbers must be tuned for your Robot!  Be careful!
-        final double STEER_K = 0.03;                    // how hard to turn toward the target
-        final double DRIVE_K = 0.26;                    // how hard to drive fwd toward the target
-        final double DESIRED_TARGET_AREA = 13.0;        // Area of the target when the robot reaches the wall
-        final double MAX_DRIVE = 0.7;                   // Simple speed limit so we don't drive too fast
-
-        double tv = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0);
-        double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
-        double ty = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ty").getDouble(0);
-        double ta = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ta").getDouble(0);
-
-        if (tv < 1.0)
-        {
-          m_LimelightHasValidTarget = false;
-          m_LimelightDriveCommand = 0.0;
-          m_LimelightSteerCommand = 0.0;
-          return;
-        }
-
-        m_LimelightHasValidTarget = true;
-
-        // Start with proportional steering
-        double steer_cmd = tx * STEER_K;
-        m_LimelightSteerCommand = steer_cmd;
-
-        // try to drive forward until the target area reaches our desired area
-        double drive_cmd = (DESIRED_TARGET_AREA - ta) * DRIVE_K;
-
-        // don't let the robot drive too fast into the goal
-        if (drive_cmd > MAX_DRIVE)
-        {
-          drive_cmd = MAX_DRIVE;
-        }
-        m_LimelightDriveCommand = drive_cmd;
-  }
+  
 
 //pcm 1   2 3 high gear 6 7 low gear 
 //pcm 0   0 1 hatch grab 6 7 hatch extender 4 5 intake
@@ -194,11 +154,8 @@ public class Robot extends TimedRobot {
   
 
   Spark right_front = new Spark(0);
-  //Spark right_center = new Spark(2);
   Spark right_rear = new Spark(1);
-
   Spark left_front = new Spark(2);
-  //Spark left_center = new Spark(5);
   Spark left_rear = new Spark(3);
 
   Spark elevator_1 = new Spark(4);
@@ -214,8 +171,11 @@ public class Robot extends TimedRobot {
 
  // Victor left_lift = new Victor(0);
  // Victor right_lift = new Victor(1);
-
-  DigitalInput bottom_limit_switch = new DigitalInput(0);
+  Compressor compressor = new Compressor(0);
+  DigitalInput bottom_limit_switch = new DigitalInput(4);
+  AnalogInput sensor = new AnalogInput(0);
+  Encoder encoder_left = new Encoder(1, 0, true);
+  Encoder encoder_right = new Encoder(3, 2, true);
 
   SpeedControllerGroup right = new SpeedControllerGroup(right_front, right_rear);
   SpeedControllerGroup left = new SpeedControllerGroup(left_front, left_rear);
@@ -232,9 +192,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousInit() {
-    m_autoSelected = m_chooser.getSelected();
-    // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
-    System.out.println("Auto selected: " + m_autoSelected);
+    
   }
 
   @Override
@@ -246,8 +204,11 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
+    compressor.setClosedLoopControl(true);
+    NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(1);
+    NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(1);
    /*
-   Fix this area of code for driveTrain
+   pathfinder should replace the current tank drive
    */ 
     double stickLeftY = controller.getLeftThumbstickY();
     double stickRightY = controller.getRightThumbstickY();
@@ -266,15 +227,18 @@ public class Robot extends TimedRobot {
     stickRightY = (stickRightY)*1.0;
     
 
-    if (bottom_limit_switch.get()){
-      //System.out.println("Limit SWitch " + bottom_limit_switch.get());
-    }
+    
 
     //System.out.println("Left/Right: " + stickLeftY + ", " + stickRightY);
     myRobot.tankDrive(stickLeftY, stickRightY);
     //elevator.set(controller.getLeftThumbstickY());
    // SmartDashboard.putNumber("eLEVATORtHROTTLE", controller.getLeftThumbstickY());
-    //Elevator code - Press "A" to extend, "X" to ;retract.
+    if (controller.getAButton() == true) {
+      System.out.println("Left encoder value " + encoder_left.get());
+      System.out.println("Right encoder value " + encoder_right.get());
+    }
+   
+   //Elevator code 
     
     double joystickY = operatorController.getJoystickY();
     if (Math.abs(joystickY) > 0.1){
@@ -291,7 +255,7 @@ public class Robot extends TimedRobot {
       }
       else {
         elevator.set(0.0);
-       // elevatorController.set(DoubleSolenoid.Value.kForward);
+        elevatorController.set(DoubleSolenoid.Value.kForward);
      /*if (elevatorController.get() == DoubleSolenoid.Value.kReverse){
         System.out.println("UNLOCKING ELEVATOR");
         elevatorController.set(DoubleSolenoid.Value.kForward);
@@ -315,61 +279,115 @@ public class Robot extends TimedRobot {
       elevatorController.set(DoubleSolenoid.Value.kForward);
     }
 
-    
+    if (operatorController.getButtonTwo() == true && bottom_limit_switch.get() == false){
+      elevator.set(0.5);   //not sure if positive is going up or down, needs testing
+      } else if (operatorController.getButtonTwo() == true && bottom_limit_switch.get() == true){
+        elevator.set(0.0);
+        }
 
     
+    //vision code
+    if (controller.getXButton() == true){
     
     
 
-    /*
-     for (int a = 0, a <= 60, a++) {
-      if (a <= 30) {
+      double vision_target = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0.0);
+      double horizontalOffset = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0.0);	//positive means target is on the right side of the fov, negative is left side
+  
+      NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(3);
+      NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(0);
+  
+  int positiveTolerance = 3;
+  int negativeTolerance = -3;
+  
+  double turn_speed = 0.55;
+  double move_speed = 0.5;
+  double test_turn_speed = 0.65;
+  double test_move_speed = 0.7;
+  double min_distance_from_wall = 5.0; // Minimum distance from the wall, set actual value here
+  double min_distance_from_wall_meters = min_distance_from_wall / 39.37; //min distance but in meters
+  //double min_distance_from_wall_meters = 0;       direct input
+  
+  
+  
+      if (vision_target == 1){
+  
+          System.out.println("Target found at " + horizontalOffset + " degrees away from the center crosshair");
+  
+      
+          //test section, turning while moving forward, sensor using meters
+          
+              while (controller.getStartButton() == true){
+                  
+                  
+                  double sensor_distance = sensor.getVoltage() * 1.024;
+                  
+          if (sensor_distance > min_distance_from_wall_meters){
+                      if (horizontalOffset < positiveTolerance){
+  
+                          System.out.println("Turning left to compensate");
+                          myRobot.tankDrive(test_turn_speed, test_move_speed);
+              
+  
+                      } else if (horizontalOffset > negativeTolerance) {
+  
+                          System.out.println("Turning right to compensate");
+                          myRobot.tankDrive(test_move_speed, test_turn_speed);
+  
+                      } else {
+  
+                          System.out.println("Aligned with target");
+                          System.out.println("Autonomously moving to target " + sensor_distance + " meters away. . . RELEASE BUTTON to REGAIN CONTROL");
+                          myRobot.tankDrive(test_move_speed, test_move_speed);
+                      }    
+  
+                     
+  
+                  } else {
+                      System.out.println("Should be at goal position - stopping autonomous control");
+                      System.out.println("Distance: " + sensor_distance);
+                      break;
+                  }
+          
+                  Timer.delay(0.02);
+                }
+              }
+            }
+          
 
-      }
-    }
-    */
+    
 
-    //intake
-    if (operatorController.getButtonEight() == true) {
+    //intake/cargo
+    if (operatorController.getButtonEleven() == true) {
       intake.set(-0.8);
       
- }  else if (operatorController.getButtonSeven() == true) {
+ }  else if (operatorController.getButtonTwelve() == true) {
       intake.set(0.8);
 
     } else {
       intake.set(0.0);
     }
-    /*
-    if(bottom_limit_switch.get() == true)
-    {
-        elevator.set(0.0);
-    }
-    else {
-      
-    }
-    */
     
     
     
-    if (operatorController.getButtonNine() == true) {
+    
+    if (operatorController.getButtonSeven() == true) {
       hatchExtender.set(DoubleSolenoid.Value.kReverse);
       Timer.delay(0.5);
       hatchGrab.set(DoubleSolenoid.Value.kForward);
       Timer.delay(0.25);
-     // hatchGrab.set(DoubleSolenoid.Value.kReverse);
-     // Timer.delay(0.01);
+      hatchExtender.set(DoubleSolenoid.Value.kReverse);
       
-      hatchExtender.set(DoubleSolenoid.Value.kReverse);
-      //intakeRotator2.set(-0.5);
     } 
-    else if (operatorController.getButtonTen() == true) {
+    else if (operatorController.getButtonEight() == true) {
       hatchExtender.set(DoubleSolenoid.Value.kReverse);
-      Timer.delay(0.001);
-      hatchGrab.set(DoubleSolenoid.Value.kReverse);
-      Timer.delay(0.001);
-      hatchExtender.set(DoubleSolenoid.Value.kReverse);
-      Timer.delay(0.001);
       cargoArm.set(DoubleSolenoid.Value.kForward);
+      Timer.delay(0.5);
+      hatchGrab.set(DoubleSolenoid.Value.kReverse);
+      Timer.delay(0.25);
+      hatchExtender.set(DoubleSolenoid.Value.kReverse);
+      Timer.delay(0.125);
+      cargoArm.set(DoubleSolenoid.Value.kReverse);
     } 
     else {
       hatchExtender.set(DoubleSolenoid.Value.kForward);
@@ -391,134 +409,20 @@ public class Robot extends TimedRobot {
     }
 
     
-    if (operatorController.getButtonEleven() == true){
+    if (operatorController.getButtonNine() == true && cargoArm.get() == Value.kForward) {
       cargoArm.set(DoubleSolenoid.Value.kReverse);
-      //System.out.println("Elevator Locked");
-    } else if (operatorController.getButtonTwelve()){
-      cargoArm.set(DoubleSolenoid.Value.kForward);
-     // System.out.println("Elevator Unlocked");
-    } else {
-      //cargoArm.set(DoubleSolenoid.Value.kReverse);
-    }
-    
-    
-  }
-    //test
-
-   // public void testPeriodic() {
       
-
-
-  //  }
-   }
+    } else if (operatorController.getButtonTen() == true && cargoArm.get() == Value.kReverse) {
+      cargoArm.set(DoubleSolenoid.Value.kForward);
+     
+    } 
+  } 
+  }
+  
+  
+   
 
 
 
   
-  /*class cameraHandler {
-    SerialPort visionPort;
-    String visionLocation;
-
-    String x1Temp;
-    String y1Temp;
-    String x2Temp;
-    String y2Temp;
-
-    int x1;
-    int y1;
-    int x2;
-    int y2;
-
-    public int[] getConsole() {
-      try {
-        visionPort = new SerialPort(115200, SerialPort.Port.kMXP);
-        visionLocation = visionPort.readString();
-
-        x1Temp = visionLocation.substring(8, 10);
-        y1Temp = visionLocation.substring(12, 14);
-        x2Temp = visionLocation.substring(16, 18);
-        y2Temp = visionLocation.substring(20, 22);
-
-        int x1 = Integer.parseInt(x1Temp);
-        int y1 = Integer.parseInt(y1Temp);
-        int x2 = Integer.parseInt(x2Temp);
-        int y2 = Integer.parseInt(y2Temp);
-
-        int[] location = {x1, y1, x2, y2};
-
-        return location;
-      } catch (Exception e) {
-        System.out.println(e);
-        return null;
-      }
-    }
-
-    public String getRawConsole() {
-      try {
-        visionPort = new SerialPort(115200, SerialPort.Port.kUSB2);
-        return visionLocation = visionPort.readString();
-      } catch (Exception e) {
-        return "We messed up.";
-      }
-    }
-
-    public double getTargetCenter() {
-      try {
-        visionPort = new SerialPort(115200, SerialPort.Port.kMXP);
-        visionLocation = visionPort.readString();
-
-        x1Temp = visionLocation.substring(8, 10);
-        x2Temp = visionLocation.substring(16, 18);
-
-        int x1 = Integer.parseInt(x1Temp);
-        int x2 = Integer.parseInt(x2Temp);
-
-        double targetCenter = (x1 + x2)/2;
-
-        return targetCenter;
-      } catch (Exception e) {
-        System.out.println(e);
-        return 0.0;
-      }
-    }
-
-    public int getx1() {
-      visionPort = new SerialPort(115200, SerialPort.Port.kMXP);
-      visionLocation = visionPort.readString();
-
-      x1Temp = visionLocation.substring(8, 10);
-      int x1 = Integer.parseInt(x1Temp);
-
-      return x1;
-    }
-
-    public int gety1() {
-      visionPort = new SerialPort(115200, SerialPort.Port.kMXP);
-      visionLocation = visionPort.readString();
-
-      y1Temp = visionLocation.substring(12, 14);
-      int y1 = Integer.parseInt(x1Temp);
-
-      return y1;
-    }
-
-    public int getx2() {
-      visionPort = new SerialPort(115200, SerialPort.Port.kMXP);
-      visionLocation = visionPort.readString();
-
-      x2Temp = visionLocation.substring(16, 18);
-      int x1 = Integer.parseInt(x1Temp);
-
-      return x1;
-    }
-
-    public int gety2() {
-      visionPort = new SerialPort(115200, SerialPort.Port.kMXP);
-      visionLocation = visionPort.readString();
-
-      y2Temp = visionLocation.substring(20, 22);
-      int y1 = Integer.parseInt(x1Temp);
-
-      return y1;
-    }
-  }*/
+  

@@ -112,6 +112,11 @@ import java.util.concurrent.TimeUnit;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.Encoder;
+import jaci.pathfinder.Pathfinder;
+import jaci.pathfinder.Trajectory;
+import jaci.pathfinder.Waypoint;
+import jaci.pathfinder.modifiers.TankModifier;
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 
 
 public class Robot extends TimedRobot {
@@ -168,6 +173,7 @@ public class Robot extends TimedRobot {
 
   Spark intake = new Spark(8);// Re-Enter Actual Value Because This Is A Place Holder Value
   Spark fly_wheel = new Spark(9);
+  ADXRS450_Gyro gyro;
 
  // Victor left_lift = new Victor(0);
  // Victor right_lift = new Victor(1);
@@ -185,9 +191,12 @@ public class Robot extends TimedRobot {
   DoubleSolenoid hatchGrab = new DoubleSolenoid(0, 0, 1);
   DoubleSolenoid hatchExtender = new DoubleSolenoid(0, 6, 7);
   DoubleSolenoid cargoArm = new DoubleSolenoid(0, 4, 5);
+  //ADXRS450_Gyro gyro = new ADXRS450_Gyro();
+//	gyro.calibrate();
 
 
   DifferentialDrive myRobot = new DifferentialDrive(left, right);
+  
 
 
   @Override
@@ -213,26 +222,50 @@ public class Robot extends TimedRobot {
     double stickLeftY = controller.getLeftThumbstickY();
     double stickRightY = controller.getRightThumbstickY();
 
-  /*
-  double steer = controller.getX(Hand.kRight);
-  double drive = controller.getY(Hand.kLeft);
-  boolean auto = controller.getAButton();
   
-  steer *= 0.70;
-  drive *= 0.70;
-  */
    
-  
     stickLeftY = (stickLeftY)*1.0;
     stickRightY = (stickRightY)*1.0;
-    
-
-    
-
-    //System.out.println("Left/Right: " + stickLeftY + ", " + stickRightY);
     myRobot.tankDrive(stickLeftY, stickRightY);
-    //elevator.set(controller.getLeftThumbstickY());
-   // SmartDashboard.putNumber("eLEVATORtHROTTLE", controller.getLeftThumbstickY());
+    
+    //the following is the pathfinder code, heavily untested.
+    /*
+    Waypoint[] points = new Waypoint[] {
+      new Waypoint(-4, -1, 0),
+      new Waypoint(-2, -2, 0),
+      new Waypoint(0, 0, 0)
+    };
+    Trajectory.Config config = new Trajectory.Config(Trajectory.FitMethod.HERMITE_CUBIC, Trajectory.Config.SAMPLES_HIGH, 0.05, 1.4, 2.0, 60.0);
+    Trajectory trajectory = Pathfinder.generate(points, config);
+    TankModifier modifier = newTankModifier(trajectory).modify(0.0);  //put meter value here
+    EncoderFollower left = new EncoderFollower(modifier.getLeftTrajectory());
+    EncoderFollower right = new EncoderFollower(modifier.getRightTrajectory());
+
+    left.configureEncoder(a, b, c);  //a=current position of encoder, b=# of encoder ticks per rev(int), c=wheel diameter of wheels in meters
+    right.configureEncoder(a, b, c);
+
+    left.configurePIDVA(a, b, c, d, e); //a=p, b=i, c=d, d=velocity ratio, e=acceleration gain, for more detail check pathfinder java wiki
+    right.configurePIDVA(a, b, c, d, e);
+
+    double left_calculation = left.calculate(a);  //a=left encoder position
+    double right_calculation = right.calculate(b);  //b=right encoder position
+
+    double gyro_heading = //gyro codes here, in degrees
+    double desired_heading = Pathfinder.r2d(left.getHeading()); //in degrees 
+
+    double angleDifference = Pathfinder.boundHalfDegrees(desired_heading - gyro_heading);
+    angleDifference = angleDifference % 360.0;
+    if (Math.abs(angleDifference) > 180.0) {
+      angleDIff = (angleDifference > 0) ? angleDifference - 360 : angleDiff + 360;
+    }
+
+    double turn = 0.8 * (-1.0/80.0) * angleDifference;
+
+    myRobot.tankDrive(left_calculation + turn, right_calculation - turn);
+    */
+    
+    
+    
     if (controller.getAButton() == true) {
       System.out.println("Left encoder value " + encoder_left.get());
       System.out.println("Right encoder value " + encoder_right.get());
@@ -278,12 +311,18 @@ public class Robot extends TimedRobot {
       System.out.println("Manually un-locking elevator");
       elevatorController.set(DoubleSolenoid.Value.kForward);
     }
-
-    if (operatorController.getButtonTwo() == true && bottom_limit_switch.get() == false){
-      elevator.set(0.5);   //not sure if positive is going up or down, needs testing
-      } else if (operatorController.getButtonTwo() == true && bottom_limit_switch.get() == true){
-        elevator.set(0.0);
-        }
+    //System.out.println("Limit switch is after this");
+    if (operatorController.getButtonOne() == true && bottom_limit_switch.get() == true){
+      System.out.println("THis is false");
+      elevator.set(0.1);
+     // elevatorController.set(DoubleSolenoid.Value.kReverse);
+      elevatorController.set(DoubleSolenoid.Value.kReverse);   //not sure if positive is going up or down, needs testing
+    } else if (operatorController.getButtonOne() == false && bottom_limit_switch.get() == false){
+      System.out.println("Tis is true");
+      //elevatorController.set(DoubleSolenoid.Value.kForward);
+      //elevator.set(0.0);
+      elevatorController.set(DoubleSolenoid.Value.kForward);
+    }
 
     
     //vision code
@@ -372,7 +411,7 @@ public class Robot extends TimedRobot {
     
     
     if (operatorController.getButtonSeven() == true) {
-      hatchExtender.set(DoubleSolenoid.Value.kReverse);
+      hatchExtender.set(DoubleSolenoid.Value.kForward);
       Timer.delay(0.5);
       hatchGrab.set(DoubleSolenoid.Value.kForward);
       Timer.delay(0.25);
@@ -380,7 +419,7 @@ public class Robot extends TimedRobot {
       
     } 
     else if (operatorController.getButtonEight() == true) {
-      hatchExtender.set(DoubleSolenoid.Value.kReverse);
+      hatchExtender.set(DoubleSolenoid.Value.kForward);
       cargoArm.set(DoubleSolenoid.Value.kForward);
       Timer.delay(0.5);
       hatchGrab.set(DoubleSolenoid.Value.kReverse);
@@ -390,7 +429,7 @@ public class Robot extends TimedRobot {
       cargoArm.set(DoubleSolenoid.Value.kReverse);
     } 
     else {
-      hatchExtender.set(DoubleSolenoid.Value.kForward);
+      hatchExtender.set(DoubleSolenoid.Value.kReverse);
       
       
     }

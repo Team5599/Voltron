@@ -300,46 +300,57 @@ public class Robot extends TimedRobot {
       }*/
       
     }
-    if(operatorController.getButtonSix())
-    {
+    
+      /*
       System.out.println("Switching from hatch to cargo position");
       if (operatorController.getButtonThree()){
-        elevator.set(0.5);
-        Timer.delay(0.5);
+        elevator.set(-0.25);
+        Timer.delay(0.7);
         elevator.set(0.0);
       }
   
       if (operatorController.getButtonFive()){
-          elevator.set(0.5);
-          Timer.delay(1);
+          elevator.set(-0.39);
+          Timer.delay(0.7);
           elevator.set(0.0);
         
       } else if (operatorController.getButtonFour()){
-        elevator.set(0.5);
-        Timer.delay(1);
+        elevator.set(-0.66);
+        Timer.delay(0.7);
         elevator.set(0.0);
       }
-
-    }
-    else {
+        */
+    
+      //Rocket cargo
       if (operatorController.getButtonThree()){
-        elevator.set(0.5);
+        System.out.println("Button 3");
+        elevatorController.set(DoubleSolenoid.Value.kReverse);
+        elevator.set(-0.9);
         Timer.delay(0.5);
         elevator.set(0.0);
       }
-  
+      //cargo ship
       if (operatorController.getButtonFive()){
           elevatorController.set(DoubleSolenoid.Value.kReverse);
           elevator.set(-0.7);
           Timer.delay(0.7);
           elevator.set(0.0);
-        
-      } else if (operatorController.getButtonFour()){
-        elevator.set(0.5);
-        Timer.delay(1);
+     }
+          
+       //hatch 
+       else if (operatorController.getButtonFour()){
+        elevatorController.set(DoubleSolenoid.Value.kReverse);
+        elevator.set(-0.7);
+        Timer.delay(0.45);
         elevator.set(0.0);
       }
-    }
+      if(operatorController.getButtonTwo())
+      {
+        elevatorController.set(DoubleSolenoid.Value.kReverse);
+        elevator.set(-0.6);
+        Timer.delay(0.03);
+      }
+    
    
     //System.out.println("Limit switch is after this");
     if (operatorController.getButtonOne() == true && bottom_limit_switch.get() == true){
@@ -355,6 +366,11 @@ public class Robot extends TimedRobot {
     }
 
     
+  if (controller.getBButton() == true)  {
+    double sensor_distance = sensor.getVoltage() * 1.024;
+    System.out.println(sensor_distance);
+  }
+  
     //vision code
     if (controller.getXButton() == true){
     
@@ -371,16 +387,16 @@ public class Robot extends TimedRobot {
   
   double turn_speed = 0.55;
   double move_speed = 0.5;
-  double test_turn_speed = 0.65;
+  double test_turn_speed = 1.0;
   double test_move_speed = 0.7;
   double min_distance_from_wall = 5.0; // Minimum distance from the wall, set actual value here
   double min_distance_from_wall_meters = min_distance_from_wall / 39.37; //min distance but in meters
-  //double min_distance_from_wall_meters = 0;       direct input
+//  double min_distance_from_wall_meters = 2.0;    //   direct input
   
   
   
       if (vision_target == 1){
-  
+          
           System.out.println("Target found at " + horizontalOffset + " degrees away from the center crosshair");
   
       
@@ -390,9 +406,9 @@ public class Robot extends TimedRobot {
                   
                   
                   double sensor_distance = sensor.getVoltage() * 1.024;
-                  //System.out.println(sensor_distance);
+                  System.out.println("Should be " + sensor_distance + "meters away");
                   
-          if (sensor_distance > min_distance_from_wall_meters){
+                  if (sensor_distance > min_distance_from_wall_meters){
                       if (horizontalOffset < positiveTolerance){
   
                           System.out.println("Turning left to compensate");
@@ -442,14 +458,23 @@ public class Robot extends TimedRobot {
     
     
     if (operatorController.getButtonEight() == true) {
+     /* hatchGrab.set(DoubleSolenoid.Value.kForward);
+      Timer.delay(0.5);
+      hatchExtender.set(DoubleSolenoid.Value.kForward);
+      Timer.delay(0.5);
+      hatchExtender.set(DoubleSolenoid.Value.kReverse);
+*/
       hatchExtender.set(DoubleSolenoid.Value.kForward);
      // cargoArm.set(DoubleSolenoid.Value.kForward);
       Timer.delay(0.5);
       hatchGrab.set(DoubleSolenoid.Value.kForward);
       Timer.delay(0.25);
+     // cargoArm.set(DoubleSolenoid.Value.kForward);
+     // Timer.delay(0.25);
       hatchExtender.set(DoubleSolenoid.Value.kReverse);
       Timer.delay(0.125);
      // cargoArm.set(DoubleSolenoid.Value.kReverse);
+      
       
     } 
     else if (operatorController.getButtonSeven() == true) {
@@ -464,9 +489,11 @@ public class Robot extends TimedRobot {
     } 
     else {
       hatchExtender.set(DoubleSolenoid.Value.kReverse);
-    
-      
-      
+      //hatchGrab.set(DoubleSolenoid.Value.kForward);
+    }
+    if(operatorController.getButtonSix() == true)
+    {
+      hatchGrab.set(DoubleSolenoid.Value.kReverse);
     }
         
     //High and low gear controllers.

@@ -178,10 +178,13 @@ public class Robot extends TimedRobot {
  // Victor left_lift = new Victor(0);
  // Victor right_lift = new Victor(1);
   Compressor compressor = new Compressor(0);
-  DigitalInput bottom_limit_switch = new DigitalInput(4);
+ // DigitalInput bottom_limit_switch = new DigitalInput(4);
   AnalogInput sensor = new AnalogInput(0);
   Encoder encoder_left = new Encoder(1, 0, true);
   Encoder encoder_right = new Encoder(3, 2, true);
+  DigitalInput up_switch = new DigitalInput(4);
+  DigitalInput down_switch = new DigitalInput(6);
+
 
   SpeedControllerGroup right = new SpeedControllerGroup(right_front, right_rear);
   SpeedControllerGroup left = new SpeedControllerGroup(left_front, left_rear);
@@ -196,6 +199,7 @@ public class Robot extends TimedRobot {
 
 
   DifferentialDrive myRobot = new DifferentialDrive(left, right);
+  
   
 
 
@@ -224,9 +228,12 @@ public class Robot extends TimedRobot {
 
   
    
-    stickLeftY = (stickLeftY)*1.0;
-    stickRightY = (stickRightY)*1.0;
+    //stickLeftY = (stickLeftY)*1.0;
+    //stickRightY = (stickRightY)*1.0;
     myRobot.tankDrive(stickLeftY, stickRightY);
+    //System.out.println("JR:" + stickLeftY + "JL" + stickRightY + "| GBR" + right.get() + "GBL:" + left.get());
+    // System.out.println("Right motor speed is: " + right.get());
+    // System.out.println("Left motor speed is: " + left.get());
     
     
     //the following is the pathfinder code, heavily untested.
@@ -265,13 +272,21 @@ public class Robot extends TimedRobot {
     myRobot.tankDrive(left_calculation + turn, right_calculation - turn);
     */
     
+   /* 
+    //limit swtich for hatch
+    if(up_switch.get() == true && down_switch.get() == true)
+    {
+      hatchGrab.set(DoubleSolenoid.Value.kReverse);
+    }
+    
+    
     
     
     if (controller.getAButton() == true) {
       System.out.println("Left encoder value " + encoder_left.get());
       System.out.println("Right encoder value " + encoder_right.get());
     }
-   
+   */
    //Elevator code 
     
     double joystickY = operatorController.getJoystickY();
@@ -325,74 +340,91 @@ public class Robot extends TimedRobot {
       if (operatorController.getButtonThree()){
         System.out.println("Button 3");
         elevatorController.set(DoubleSolenoid.Value.kReverse);
+        Timer.delay(0.1);
         elevator.set(-0.9);
-        Timer.delay(0.5);
+        Timer.delay(0.4);
         elevator.set(0.0);
       }
       //cargo ship
       if (operatorController.getButtonFive()){
           elevatorController.set(DoubleSolenoid.Value.kReverse);
+          Timer.delay(0.1);
           elevator.set(-0.7);
-          Timer.delay(0.7);
+          Timer.delay(0.55);
           elevator.set(0.0);
      }
           
        //hatch 
        else if (operatorController.getButtonFour()){
         elevatorController.set(DoubleSolenoid.Value.kReverse);
-        elevator.set(-0.7);
+        Timer.delay(0.1);
+        elevator.set(-0.9);
         Timer.delay(0.45);
         elevator.set(0.0);
       }
+      /*
       if(operatorController.getButtonTwo())
       {
-        elevatorController.set(DoubleSolenoid.Value.kReverse);
-        elevator.set(-0.6);
-        Timer.delay(0.03);
+       // elevatorController.set(DoubleSolenoid.Value.kReverse);
+       hatchGrab.set(DoubleSolenoid.Value.kForward);
+        Timer.delay(0.1);
+        //elevator.set(-0.6);
+        hatchExtender.set(DoubleSolenoid.Value.kReverse);
+       // Timer.delay(0.03);
       }
+      */
     
    
     //System.out.println("Limit switch is after this");
-    if (operatorController.getButtonOne() == true && bottom_limit_switch.get() == true){
+    if (operatorController.getButtonOne() == true){ //&& bottom_limit_switch.get() == true){
       System.out.println("THis is false");
       elevator.set(0.1);
      // elevatorController.set(DoubleSolenoid.Value.kReverse);
       elevatorController.set(DoubleSolenoid.Value.kReverse);   //not sure if positive is going up or down, needs testing
-    } else if (operatorController.getButtonOne() == false && bottom_limit_switch.get() == false){
+    }
+
+  // System.out.println("Elevator Motor:" + elevator.get());
+    /*else if (operatorController.getButtonOne() == false){ //&& bottom_limit_switch.get() == false){
       System.out.println("Tis is true");
       //elevatorController.set(DoubleSolenoid.Value.kForward);
       //elevator.set(0.0);
       elevatorController.set(DoubleSolenoid.Value.kReverse);
     }
+    */
 
     
-  if (controller.getBButton() == true)  {
+  if (controller.getAButton() == true)  {
     double sensor_distance = sensor.getVoltage() * 1.024;
     System.out.println(sensor_distance);
   }
   
     //vision code
-    if (controller.getXButton() == true){
-    
+    if (controller.getYButton() == true){
+    //rotate 90 degrees right, positive y axis is right side
+    //rotate 90 degrees left, positive y axis is left side.
+    //in theory, during tracking, if horizontalOffset > positiveTolerance, then it turns accordingly to left or right
+    //if positive y axis is pointing to right, then it should turn left to calibrate, vice versa for pointing to left.
+    //therefore, we NEED the rotation, because it matters a lot.
     
 
       double vision_target = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0.0);
-      double horizontalOffset = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0.0);	//positive means target is on the right side of the fov, negative is left side
+      double horizontalOffset = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ty").getDouble(0.0);	//positive means target is on the right side of the fov, negative is left side
   
       NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(3);
       NetworkTableInstance.getDefault().getTable("limelight").getEntry("camMode").setNumber(0);
+      System.out.println(horizontalOffset);
   
-  int positiveTolerance = 3;
-  int negativeTolerance = -3;
-  
-  double turn_speed = 0.55;
-  double move_speed = 0.5;
-  double test_turn_speed = 1.0;
+  int positiveTolerance = 12;
+  int negativeTolerance = 9;
+  // turn was 55 move speed was 50
+  double turn_speed = 0.3;
+  double move_speed = 0.2;
+  double test_turn_speed = 0.4;
   double test_move_speed = 0.7;
-  double min_distance_from_wall = 5.0; // Minimum distance from the wall, set actual value here
+  double min_distance_from_wall = 30.0; // Minimum distance from the wall, set actual value here
   double min_distance_from_wall_meters = min_distance_from_wall / 39.37; //min distance but in meters
 //  double min_distance_from_wall_meters = 2.0;    //   direct input
-  
+//Robot should calibrate itself when it is 40 meters (for now) close to the reflective tape  
   
   
       if (vision_target == 1){
@@ -402,7 +434,7 @@ public class Robot extends TimedRobot {
       
           //test section, turning while moving forward, sensor using meters
           
-              while (controller.getXButton() == true){
+              while (controller.getYButton() == true){
                   
                   
                   double sensor_distance = sensor.getVoltage() * 1.024;
@@ -412,13 +444,16 @@ public class Robot extends TimedRobot {
                       if (horizontalOffset < positiveTolerance){
   
                           System.out.println("Turning left to compensate");
+                          test_turn_speed = 0.9;
                           myRobot.tankDrive(-test_turn_speed, -test_move_speed);
               
   
                       } else if (horizontalOffset > negativeTolerance) {
   
                           System.out.println("Turning right to compensate");
-                          myRobot.tankDrive(test_move_speed, test_turn_speed);
+                          test_turn_speed = 0.9;
+                          myRobot.tankDrive(test_move_speed, -test_turn_speed);
+                          
   
                       } else {
   
@@ -445,10 +480,11 @@ public class Robot extends TimedRobot {
 
     //intake/cargo
     if (operatorController.getButtonEleven() == true) {
-      intake.set(-0.8);
+      intake.set(-0.9);
+      
       
  }  else if (operatorController.getButtonTwelve() == true) {
-      intake.set(0.8);
+      intake.set(0.9);
 
     } else {
       intake.set(0.0);
@@ -456,14 +492,20 @@ public class Robot extends TimedRobot {
     
     
     
-    
+  /*  
     if (operatorController.getButtonEight() == true) {
      /* hatchGrab.set(DoubleSolenoid.Value.kForward);
       Timer.delay(0.5);
       hatchExtender.set(DoubleSolenoid.Value.kForward);
       Timer.delay(0.5);
       hatchExtender.set(DoubleSolenoid.Value.kReverse);
-*/
+
+      hatchGrab.set(DoubleSolenoid.Value.kForward);
+      Timer.delay(0.2);
+      hatchExtender.set(DoubleSolenoid.Value.kForward);
+      Timer.delay(0.2);
+      hatchExtender.set(DoubleSolenoid.Value.kReverse);
+      Timer.delay(0.2);
       hatchExtender.set(DoubleSolenoid.Value.kForward);
      // cargoArm.set(DoubleSolenoid.Value.kForward);
       Timer.delay(0.5);
@@ -471,8 +513,8 @@ public class Robot extends TimedRobot {
       Timer.delay(0.25);
      // cargoArm.set(DoubleSolenoid.Value.kForward);
      // Timer.delay(0.25);
-      hatchExtender.set(DoubleSolenoid.Value.kReverse);
-      Timer.delay(0.125);
+     // hatchExtender.set(DoubleSolenoid.Value.kReverse);
+     // Timer.delay(0.125);
      // cargoArm.set(DoubleSolenoid.Value.kReverse);
       
       
@@ -482,32 +524,47 @@ public class Robot extends TimedRobot {
      // cargoArm.set(DoubleSolenoid.Value.kForward);
       Timer.delay(0.5);
       hatchGrab.set(DoubleSolenoid.Value.kReverse);
-      Timer.delay(0.25);
-      hatchExtender.set(DoubleSolenoid.Value.kReverse);
+     // Timer.delay(0.25);
+     // hatchExtender.set(DoubleSolenoid.Value.kReverse);
      // cargoArm.set(DoubleSolenoid.Value.kReverse);
       
     } 
-    else {
-      hatchExtender.set(DoubleSolenoid.Value.kReverse);
-      //hatchGrab.set(DoubleSolenoid.Value.kForward);
-    }
-    if(operatorController.getButtonSix() == true)
+   
+    else if(operatorController.getButtonSix() == true)
     {
       hatchGrab.set(DoubleSolenoid.Value.kReverse);
+      Timer.delay(0.15);
+      hatchExtender.set(DoubleSolenoid.Value.kForward);
     }
-        
+    /*else {
+      hatchExtender.set(DoubleSolenoid.Value.kForward);
+      //hatchGrab.set(DoubleSolenoid.Value.kForward);
+    }
+    */
+       
     //High and low gear controllers.
-    if (controller.getRightTrigger() == true) {
+    if (controller.getLeftTrigger() == true) {
 
       gearController.set(DoubleSolenoid.Value.kReverse);
       System.out.println("Tanzina Zahan Piston out");
 
-    } else if (controller.getLeftTrigger() == true) {
+    } else if (controller.getRightTrigger() == true) {
 
       gearController.set(DoubleSolenoid.Value.kForward);
       System.out.println("Nazifa 5599 Prapti Piston In");
 
     }
+    if(controller.getBButton() == true)
+    {
+      left.set(-0.8);
+      right.set(0.0);
+    }
+    if(controller.getXButton() == true)
+    {
+      right.set(0.8);
+      left.set(0.0);
+    }
+    
 
     
     if (operatorController.getButtonNine() == true ) {//&& cargoArm.get() == Value.kForward) {
